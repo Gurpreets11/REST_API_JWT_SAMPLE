@@ -23,16 +23,35 @@ public class SecurityConfiguration {
 	@Autowired
 	private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf().disable().authorizeHttpRequests().requestMatchers("/auth/**").permitAll().anyRequest()
-				.authenticated().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-				.authenticationProvider(authenticationProvider)
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		/*
+		 * http .csrf().disable()
+		 * .authorizeHttpRequests().requestMatchers("/auth/**").permitAll()
+		 * .anyRequest().authenticated() .and()
+		 * .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+		 * .and() .authenticationProvider(authenticationProvider)
+		 * .addFilterBefore(jwtAuthenticationFilter,
+		 * UsernamePasswordAuthenticationFilter.class);
+		 */
 
+    	// Correct way to disable CSRF in Spring Security 6
+		http.csrf(csrf -> csrf.disable()) 
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/auth/**").permitAll()  // Public endpoints
+            .anyRequest().authenticated() // All other requests require authentication
+        )
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // JWT is stateless
+        )
+        .authenticationProvider(authenticationProvider) // Set authentication provider
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT filter
+          
+		
 		return http.build();
 	}
 
+	
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
